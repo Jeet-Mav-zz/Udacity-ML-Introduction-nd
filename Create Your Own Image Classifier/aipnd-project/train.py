@@ -52,7 +52,7 @@ def trainloader(traindata):
 def testloader(testdata):
     return torch.utils.data.DataLoader(testdata,batch_size = args.batch_size)
 
-def train_model(arch = 'vgg19'):
+def train_model(arch):
         model = models.vgg19(pretrained=True)
         print('Using VGG19')
         
@@ -68,6 +68,7 @@ def model_classifier(model, hidden):
         ('fc2', nn.Linear(hidden,102)),
         ('output', nn.LogSoftmax(dim = 1))
     ]))
+    model.classifier = classifier
     return classifier
     
     
@@ -150,7 +151,9 @@ def saved_model(trained_model, train_data, saved):
 
 def main():
     global args
-    args = parser.parse_args()
+    
+    args = arg_parser()
+
     
     data_dir = 'flowers'
     train_dir = data_dir + '/train'
@@ -165,16 +168,13 @@ def main():
     valid_loader = trainloader(valid_data)
     test_loader =  testloader(test_data)
     
-    with open('cat_to_name.json', 'r') as f:
-        cat_to_name = json.load(f)
-    
     model = train_model(arch = 'vgg19')
+    
+    model.classifier = model_classifier(model, hidden = args.hidden)
     
     # Use GPU if it's available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    
-    model.classifier = model_classifier(model, hidden = args.hidden)
     
     criterion = nn.NLLLoss()
     optimizer = optim.Adam(model.classifier.parameters(), lr = learn_rate)
@@ -184,7 +184,5 @@ def main():
     tested_model = testmodel(trained_model, device, test_loader)
     
     save_checkpoint = saved_model(trained_model, train_data, optimizer, saved = args.directory_save)
-    
-    args = arg_parser()
-    
+        
     if __name__ == '__main__': main()
