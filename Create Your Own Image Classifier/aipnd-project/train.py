@@ -8,14 +8,19 @@ from collections import OrderedDict
 import json
 import argparse
 
-parser = argparse.ArgumentParser(description='Properties of VGG19')
 
-parser.add_argument('-e','--epochs', default = 7, type = int,  help = 'Number of total epochs to run (default: 7)')
-parser.add_argument('-b', '--batch_size', default = 64, type = int, help = 'Batch Size (default: 64)')
-parser.add_argument('--lr', '--learning_rate', default=0.001, type=float, help='Learning Rate (default: 0.001)')
-parser.add_argument('-p', '--print_every', default=20, type=int, help='print frequency (default: 20)')
-parser.add_argument('--hidden', default = 1024, type = int, help = 'Number of hidden layers (default: 1024)')
-parser.add_argument('--directory_save', type=str, help='Set directory to save checkpoint', default='./')
+def arg_parser():
+    parser = argparse.ArgumentParser(description='Properties of VGG19')
+    
+    parser.add_argument('-e','--epochs', default = 7, type = int, action='store', help = 'Number of total epochs to run (default: 7)')
+    parser.add_argument('-b', '--batch_size', default = 64, type = int, action='store', help = 'Batch Size (default: 64)')
+    parser.add_argument('--lr', '--learning_rate', default=0.001, type=float, action='store', help='Learning Rate (default: 0.001)')
+    parser.add_argument('-p', '--print_every', default=20, type=int, action='store', help='print frequency (default: 20)')
+    parser.add_argument('--hidden', default = 1024, type = int, action='store', help = 'Number of hidden layers (default: 1024)')
+    parser.add_argument('--directory_save', type=str, help='Set directory to save checkpoint', default='./')
+    
+    args = parser.parse_args()
+    return args
 
 
 def train_transforms(train_dir):
@@ -160,6 +165,9 @@ def main():
     valid_loader = trainloader(valid_data)
     test_loader =  testloader(test_data)
     
+    with open('cat_to_name.json', 'r') as f:
+        cat_to_name = json.load(f)
+    
     model = train_model(arch = 'vgg19')
     
     # Use GPU if it's available
@@ -177,5 +185,5 @@ def main():
     
     save_checkpoint = saved_model(trained_model, train_data, optimizer, saved = args.directory_save)
     
-    if __name__ == '__main__': main()
+    args = arg_parser()
         
