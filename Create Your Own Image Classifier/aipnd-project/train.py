@@ -186,4 +186,5 @@ def main():
     save_checkpoint = saved_model(trained_model, train_data, optimizer, saved = args.directory_save)
     
     args = arg_parser()
-        
+    
+    if __name__ == '__main__': main()
