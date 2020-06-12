@@ -14,6 +14,7 @@ def arg_parser():
     '''
     parser = argparse.ArgumentParser(description='Properties of VGG19')
     #Creating Arguments
+    parser.add_argument('--arch', type=str, default = 'vgg19',help='Models architeture. Default is VGG19. Choose from :https://pytorch.org/docs/master/torchvision/models.html')
     parser.add_argument('-e','--epochs', default = 7, type = int, action='store', help = 'Number of total epochs to run (default: 7)')
     parser.add_argument('--lr', '--learning_rate', default=0.001, type=float, action='store', help='Learning Rate (default: 0.001)')
     parser.add_argument('-p', '--print_every', default=20, type=int, action='store', help='print frequency (default: 20)')
@@ -91,8 +92,8 @@ print(' \n Dataset Loaded \n')
 
 #Initializing Pre trained model
 def train_model(arch):
-        model = models.vgg19(pretrained=True)
-        print('\n Using VGG19 Model \n')
+   
+        model = eval("models.{}(pretrained=True)".format(arch))
 
         for param in model.parameters():
             param.requires_grad = False
@@ -213,7 +214,7 @@ def main():
     args = arg_parser()
     #Calling arg_parser
 
-    model = train_model(arch = 'vgg19')
+    model = train_model(args.arch)
 
     model.classifier = model_classifier(model, hidden = args.hidden)
     #Using GPU if available
