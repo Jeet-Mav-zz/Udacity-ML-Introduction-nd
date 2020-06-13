@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torchvision
 from torchvision import datasets, transforms, models
 from collections import OrderedDict
-import argparse
+import argparse, json
 
 
 def arg_parser():
@@ -14,7 +14,8 @@ def arg_parser():
     '''
     parser = argparse.ArgumentParser(description='Properties of VGG19')
     #Creating Arguments
-    parser.add_argument('--arch', type=str, default = 'vgg19',help='Models architeture. Default is VGG19. Choose from :https://pytorch.org/docs/master/torchvision/models.html')
+    parser.add_argument('--arch', type=str, default = 'vgg19',help='Models architeture. Default is VGG19. Choose from : VGG19: Predefined in_features = 25088 hidden = 1024, Densenet : in_features and hidden must be defined')
+    parser.add_argument('--in_features', type = int,default = 25088, action='store', help = 'Number of total in_features Default set for VGG19 - 25088')
     parser.add_argument('-e','--epochs', default = 7, type = int, action='store', help = 'Number of total epochs to run (default: 7)')
     parser.add_argument('--lr', '--learning_rate', default=0.001, type=float, action='store', help='Learning Rate (default: 0.001)')
     parser.add_argument('-p', '--print_every', default=20, type=int, action='store', help='print frequency (default: 20)')
@@ -92,19 +93,18 @@ print(' \n Dataset Loaded \n')
 
 #Initializing Pre trained model
 def train_model(arch):
-   
-        model = eval("models.{}(pretrained=True)".format(arch))
+    model = eval("models.{}(pretrained=True)".format(arch))
+    model.name = arch
+    for param in model.parameters():
+        param.requires_grad = False
 
-        for param in model.parameters():
-            param.requires_grad = False
-
-        return model
+    return model
 
 
 #Building the network
-def model_classifier(model, hidden):
+def model_classifier(model, hidden, in_features):
     classifier = nn.Sequential(OrderedDict([
-        ('fc1', nn.Linear(25088, hidden)),
+        ('fc1', nn.Linear(in_features, hidden)),
         ('relu', nn.ReLU()),
         ('fc2', nn.Linear(hidden,102)),
         ('output', nn.LogSoftmax(dim = 1))
@@ -191,12 +191,12 @@ def testmodel(model, device, testloader,criterion):
     print(' \n Saving the Trained model as Checkpoint.pth \n')
 
 
-def saved_model(model, train_data, saved, optimizer):
+def saved_model(model, train_data, saved, optimizer, arch, classifier):
     # Save the checkpoint
     model.class_to_idx = train_data.class_to_idx
 
     checkpoint = {
-        'trained_model': 'vgg19',
+        'trained_model': model.name,
         'classifier': model.classifier,
         'optimizer': optimizer.state_dict(),
         'state_dict': model.state_dict(),
@@ -216,7 +216,7 @@ def main():
 
     model = train_model(args.arch)
 
-    model.classifier = model_classifier(model, hidden = args.hidden)
+    model.classifier = model_classifier(model,args.hidden, args.in_features)
     #Using GPU if available
     is_gpu=args.gpu
 
@@ -237,7 +237,7 @@ def main():
 
     testmodel(trainedmodel, device, testloader, criterion)
 
-    save_checkpoint = saved_model(trainedmodel, train_data, args.directory_save, optimizer)
-#Running the progran
+    save_checkpoint = saved_model(trainedmodel, train_data, args.directory_save, optimizer, args.arch, model.classifier)
+#Running the program
     print('\n Done!! \n')
 if __name__ == '__main__': main()

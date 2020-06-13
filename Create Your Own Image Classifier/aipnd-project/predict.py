@@ -1,14 +1,14 @@
+import argparse, json
 from collections import OrderedDict
 import numpy as np
 import torch
 from torch import nn, optim
 from PIL import Image
-import PIL
 import torchvision
 from torchvision import datasets, transforms, models
 from torch.utils.data import DataLoader
-import argparse, json
 from math import ceil
+
 
 
 def arg_parser():
@@ -26,7 +26,7 @@ def arg_parser():
 
 def rebuild(filepath):
     checkpoint = torch.load(filepath)
-    model = models.vgg19(pretrained=True)
+    model = model = getattr(torchvision.models, checkpoint['trained_model'])(pretrained = True)
     model.classifier = checkpoint['classifier']
     model.optimizer = checkpoint['optimizer']
     model.class_to_idx = checkpoint['class_to_idx']
@@ -47,7 +47,7 @@ def process_image(image_path):
     #Process a PIL image for use in a PyTorch model
     
     transform = transforms.Compose([
-            transforms.Resize(255),
+            transforms.Resize(256),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406],
@@ -66,7 +66,6 @@ def predict(image_path, model,device, topk, category):
     model.to(device)
     
     # Predict the class from an image file
-    #np_image = process_image(image_path)
     np_image = image_path
     np_image = torch.from_numpy(np.expand_dims(np_image, axis=0)).float()
     image = np_image.to(device)
@@ -77,8 +76,8 @@ def predict(image_path, model,device, topk, category):
     prob, label = output.topk(topk)
     prob = np.array(prob.exp().data)[0]
     labels = np.array(label)[0]
-
-  # Convert to class
+   
+    # Convert to class
     idx_to_class = {x:y for y, x in model.class_to_idx.items()}
     labels = [idx_to_class[i] for i in labels]
     flowers = [category[i] for i in labels]
